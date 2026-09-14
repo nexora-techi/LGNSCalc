@@ -290,6 +290,11 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
+.field input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .input-suffix {
   position: relative;
   display: flex;

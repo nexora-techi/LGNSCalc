@@ -14,6 +14,7 @@ const DEFAULTS = {
   usdInrRate: 100.0,
   salesTaxPercent: 40.0,
   withdrawPercent: 50.0,
+  withdrawInrAmount: 0,
   withdrawStartPeriod: 1,
 };
 
@@ -92,10 +93,24 @@ function applyDefaults() {
   document.getElementById("usdInr").value = DEFAULTS.usdInrRate;
   document.getElementById("salesTax").value = DEFAULTS.salesTaxPercent;
   document.getElementById("withdrawPercent").value = DEFAULTS.withdrawPercent;
+  document.getElementById("withdrawInr").value = DEFAULTS.withdrawInrAmount;
   document.getElementById("withdrawStart").value = DEFAULTS.withdrawStartPeriod;
+  form.querySelector('input[name="withdrawMode"][value="percent"]').checked = true;
+  syncWithdrawModeFields();
   selectedDuration = DEFAULTS.duration;
   selectedTimeUnit = "M";
   setActiveQuickSelect(selectedDuration, selectedTimeUnit);
+}
+
+function getWithdrawMode() {
+  const selected = form.querySelector('input[name="withdrawMode"]:checked');
+  return selected ? selected.value : "percent";
+}
+
+function syncWithdrawModeFields() {
+  const mode = getWithdrawMode();
+  document.getElementById("withdrawPercent").disabled = mode !== "percent";
+  document.getElementById("withdrawInr").disabled = mode !== "inr";
 }
 
 // ------------------------------------------------------------------
@@ -117,6 +132,20 @@ quickButtons.forEach((btn) => {
     setActiveQuickSelect(Number(btn.dataset.duration), btn.dataset.unit);
     form.requestSubmit();
   });
+});
+
+form.querySelectorAll('input[name="withdrawMode"]').forEach((radio) => {
+  radio.addEventListener("change", syncWithdrawModeFields);
+});
+
+document.getElementById("withdrawPercent").addEventListener("focus", () => {
+  form.querySelector('input[name="withdrawMode"][value="percent"]').checked = true;
+  syncWithdrawModeFields();
+});
+
+document.getElementById("withdrawInr").addEventListener("focus", () => {
+  form.querySelector('input[name="withdrawMode"][value="inr"]').checked = true;
+  syncWithdrawModeFields();
 });
 
 // ------------------------------------------------------------------
@@ -307,7 +336,9 @@ form.addEventListener("submit", (event) => {
     const usdInrRate = cleanNumberInput(document.getElementById("usdInr")) ?? DEFAULTS.usdInrRate;
     const salesTaxPercent = cleanNumberInput(document.getElementById("salesTax")) ?? DEFAULTS.salesTaxPercent;
     const withdrawPercent = cleanNumberInput(document.getElementById("withdrawPercent")) ?? DEFAULTS.withdrawPercent;
+    const withdrawInrAmount = cleanNumberInput(document.getElementById("withdrawInr")) ?? DEFAULTS.withdrawInrAmount;
     const withdrawStartPeriod = cleanNumberInput(document.getElementById("withdrawStart")) ?? DEFAULTS.withdrawStartPeriod;
+    const withdrawMode = getWithdrawMode();
     const duration = selectedDuration;
     const timeUnit = selectedTimeUnit;
 
@@ -318,7 +349,11 @@ form.addEventListener("submit", (event) => {
     if (usdInrRate < 0) throw new Error("USD to INR rate cannot be negative.");
     if (salesTaxPercent < 0 || salesTaxPercent > 100) throw new Error("Sales tax must be between 0 and 100.");
     if (withdrawPercent < 0 || withdrawPercent > 100) throw new Error("Withdrawal percentage must be between 0 and 100.");
+    if (withdrawInrAmount < 0) throw new Error("Withdrawal INR amount cannot be negative.");
     if (withdrawStartPeriod < 1) throw new Error("Withdrawal starting period must be 1 or greater.");
+    if (withdrawMode === "inr" && usdInrRate === 0) {
+      throw new Error("USD to INR rate must be greater than zero for INR withdrawals.");
+    }
 
     const isYears = timeUnit === "Y";
 
@@ -332,7 +367,10 @@ form.addEventListener("submit", (event) => {
       ["Rate Per Cycle", `${cycleRatePercent}%`],
       ["USD to INR Rate", `\u20b9${fmt(usdInrRate)}`],
       ["Sales Tax", `${salesTaxPercent}%`],
-      ["Withdraw %", `${withdrawPercent}%`],
+      ["Withdraw By", withdrawMode === "inr" ? "INR Amount" : "Percentage"],
+      withdrawMode === "inr"
+        ? ["Withdraw INR / Month", `\u20b9${fmt(withdrawInrAmount)}`]
+        : ["Withdraw %", `${withdrawPercent}%`],
       ["Withdraw From", `Period ${withdrawStartPeriod}`],
       ["Compounding Cycles/Day", "4"],
       ["Cycles per Period", `${periodCycles}`],
@@ -351,6 +389,8 @@ form.addEventListener("submit", (event) => {
       salesTaxPercent,
       withdrawPercent,
       withdrawStartPeriod,
+      withdrawMode,
+      withdrawInrAmount,
     });
 
     lastSummaryItems = summaryItems;
@@ -447,7 +487,7 @@ exportBtn.addEventListener("click", () => {
 // ------------------------------------------------------------------
 applyDefaults();
 
-const APP_VERSION = "9";
+const APP_VERSION = "10";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

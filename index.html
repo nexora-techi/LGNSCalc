@@ -88,10 +88,26 @@
         </div>
 
         <div class="field">
+          <label><span class="field-icon icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 12 16 16 12"/><line x1="12" y1="8" x2="12" y2="16"/></svg></span>Withdraw By</label>
+          <div class="pill-toggle">
+            <label class="pill"><input type="radio" name="withdrawMode" value="percent" checked /><span>Percentage</span></label>
+            <label class="pill"><input type="radio" name="withdrawMode" value="inr" /><span>INR Amount</span></label>
+          </div>
+        </div>
+
+        <div class="field">
           <label for="withdrawPercent"><span class="field-icon icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 12 16 16 12"/><line x1="12" y1="8" x2="12" y2="16"/></svg></span>Withdraw Percentage</label>
           <div class="input-suffix">
             <input type="number" id="withdrawPercent" step="any" inputmode="decimal" placeholder="50" />
             <span class="suffix">%</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="withdrawInr"><span class="field-icon icon-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg></span>Withdraw INR / Month</label>
+          <div class="input-suffix">
+            <input type="number" id="withdrawInr" step="any" inputmode="decimal" placeholder="0" />
+            <span class="suffix">&#8377;</span>
           </div>
         </div>
 
@@ -171,9 +187,11 @@
         <p class="how-text">
           Compounds every cycle (4 cycles/day &mdash; 120/month or 1,460/year). Each period
           builds on the previous period's <strong>Token Closing</strong> (after that
-          period's withdrawal). From your configured start period, <strong>Withdraw %</strong>
-          of the tokens added each period is withdrawn, converted to USD net of
-          <strong>Sales Tax</strong>, then to INR.
+          period's withdrawal).           From your configured start period, withdrawal uses either
+          <strong>Withdraw %</strong> of tokens added, or a fixed
+          <strong>Withdraw INR / Month</strong> (tokens withdrawn are derived
+          from that INR after sales tax). Yearly periods withdraw 12 months of
+          the INR amount.
         </p>
         <div class="formula-box">
           <div class="formula">A = P &times; (1 + r)<sup>n</sup></div>
@@ -247,7 +265,7 @@
 </main>
 
 <script src="libs/xlsx.full.min.js"></script>
-<script src="calc-core.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="calc-core.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

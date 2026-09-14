@@ -68,12 +68,17 @@ function calculateMilestones(investmentDate, duration, isYears) {
 function runCompounding({
   investmentDate, duration, isYears, principal, tokenPrice,
   cycleRatePercent, usdInrRate, salesTaxPercent, withdrawPercent,
-  withdrawStartPeriod,
+  withdrawStartPeriod, withdrawMode = "percent", withdrawInrAmount = 0,
 }) {
   const rateDecimal = cycleRatePercent / 100;
   const salesTaxDecimal = salesTaxPercent / 100;
   const withdrawPercentDecimal = withdrawPercent / 100;
   const periodCycles = isYears ? 1460 : 120;
+  const useInrAmount = withdrawMode === "inr";
+  // INR amount is entered per month. Yearly periods withdraw 12 months' worth.
+  const periodTargetInr = useInrAmount
+    ? Number(withdrawInrAmount || 0) * (isYears ? 12 : 1)
+    : 0;
 
   const milestones = calculateMilestones(investmentDate, duration, isYears);
 
@@ -88,13 +93,24 @@ function runCompounding({
 
     const endingBalance = openingBalance * Math.pow(1 + rateDecimal, periodCycles);
     const tokensAdded = endingBalance - openingBalance;
-    const tokensWithdrawn = periodIndex >= withdrawStartPeriod
-      ? tokensAdded * withdrawPercentDecimal
-      : 0.0;
+
+    const effectiveWithdrawalRate = tokenPrice * (1 - salesTaxDecimal);
+    let tokensWithdrawn = 0.0;
+
+    if (periodIndex >= withdrawStartPeriod) {
+      if (useInrAmount) {
+        const divisor = usdInrRate * effectiveWithdrawalRate;
+        tokensWithdrawn = divisor > 0 ? periodTargetInr / divisor : 0.0;
+      } else {
+        tokensWithdrawn = tokensAdded * withdrawPercentDecimal;
+      }
+      if (tokensWithdrawn > endingBalance) tokensWithdrawn = endingBalance;
+      if (tokensWithdrawn < 0) tokensWithdrawn = 0.0;
+    }
+
     const tokenClosing = endingBalance - tokensWithdrawn;
     openingBalance = tokenClosing;
 
-    const effectiveWithdrawalRate = tokenPrice * (1 - salesTaxDecimal);
     const withdrawalUsdValue = tokensWithdrawn * effectiveWithdrawalRate;
     const withdrawalInrValue = withdrawalUsdValue * usdInrRate;
     cumulativeWithdrawalInr += withdrawalInrValue;
